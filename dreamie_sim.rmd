@@ -1,0 +1,216 @@
+---
+#title: "<span style='font-size: 20px'>An Animal Crossing Villager Hunt Simulator</style>"
+#author: "<span style='font-size: 20px'>Created by @jrosecalabrese</style>"
+#date: "Deadline is May 16 2021"
+output: 
+  html_document:
+    theme:       
+      version: 4
+      bootswatch: minty
+editor_options: 
+  chunk_output_type: console
+runtime: shiny
+---
+<br>
+<div class="card text-white bg-primary mb-3" style="max-width: 90rem;">
+  <div class="card-header">An Animal Crossing Villager Hunt Simulator</div>
+  <div class="card-body">
+Created by `@jrosecalabrese` after playing too much Animal Crossing.
+  </div>
+</div>
+
+```{r include=FALSE}
+# libraries
+library(shiny)
+library(shinydashboard)
+library(shinyWidgets)
+library(dplyr)
+library(tibble)
+library(stringr)
+library(ggplot2)
+library(shinythemes)
+library(rsconnect)
+library(knitr)
+library(bslib)
+library(prettydoc)
+library(metathis)
+```
+
+```{r setup, include=FALSE}
+# Read in data
+villagers <- read.csv("https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-05/villagers.csv")
+```
+
+```{r include=FALSE}
+# do data stuff
+villagers$row_n <- NULL
+villagers$full_id <- NULL
+villagers$url <- NULL
+
+villagers$species_count <- -99 # i know i shouldn't do this 
+villagers$species_count <- ifelse(villagers$species == "alligator", 7, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "anteater", 7, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "bear", 15, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "bird", 13, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "bull", 6, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "cat", 23, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "chicken", 9, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "cow", 4, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "cub", 16, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "deer", 10, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "dog", 16, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "duck", 17, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "eagle", 9, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "elephant", 11, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "frog", 18, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "goat", 8, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "gorilla", 9, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "hamster", 8, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "hippo", 7, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "horse", 15, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "kangaroo", 8, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "koala", 9, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "lion", 7, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "monkey", 8, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "mouse", 15, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "octopus", 3, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "ostrich", 10, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "penguin", 13, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "pig", 15, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "rabbit", 20, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "rhino", 6, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "sheep", 13, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "squirrel", 18, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "tiger", 7, villagers$species_count)
+villagers$species_count <- ifelse(villagers$species == "wolf", 11, villagers$species_count)
+villagers$prob <- (1/35)*(1/villagers$species_count)
+villagers$prob <- as.numeric(villagers$prob)
+```
+
+```{r echo=FALSE, warning=FALSE, error=FALSE}
+# user interface elements and layout
+ui <- fluidPage(
+  
+    meta() %>%
+    meta_general(
+      application_name = "An Animal Crossing Villager Hunt Simulator"),
+
+    name="An Animal Crossing Villager Hunt Simulator",
+    theme = bs_theme(bootswatch = "minty"),
+    #titlePanel("How many tickets will it take to find your dreamie?"),
+    sidebarLayout(
+        sidebarPanel(
+            
+            # Type in your dreamie
+             textInput("name", "Which villager are you looking for?"),
+            tags$div(tags$a(href="https://villagerdb.com/villagers?game=nh", 
+                            "Find a list of all villagers here!", target="_blank")),
+             
+            # line break
+            br(),
+            
+            # gives probability for typed villager
+            textOutput("greeting", inline=FALSE),    
+            
+            # line break
+            br(),
+
+            # Type in the random seed
+             textInput("number", "Type in a random number."),
+            #textOutput("random", inline=FALSE),  
+            #tags$p("This is the seed that the random number generator will be based on.
+                    #Don't put zero or negative numbers."),
+            
+            # How many tickets do you have?
+            #sliderInput(inputId = "n", label = "How many tickets do you have?",
+                        #min = 1, max = 10000, value = 10),
+                
+            # line break
+            #br(),
+            
+            #textInput("n", "How many tickets do you have?"),
+              #textOutput("ticket", inline=FALSE),
+            
+            # How many tickets do you have?
+            sliderInput(inputId = "n", label = "How many mystery islands do you plan to visit?",
+                        min = 1, max = 10000, value = 10),
+              #tags$p("Be warned, you may need a few hundred tickets for this simulator
+                     #to give you any results."),
+            
+            # the source
+            #tags$div(tags$a(href=post, 
+                            #"I based the simulator on this code from the Heads or Tails blog.", target="_blank")),
+            
+            # supposed to supress warnings...
+            tags$style(type="text/css",
+                       ".shiny-output-error { visibility: hidden; }",
+                       ".shiny-output-error:before { visibility: hidden; }"),
+            
+                        tags$div(
+                tags$h4(""))),     
+
+        mainPanel(
+          plotOutput(outputId = "bars")
+                  
+    )
+))
+
+
+# server-side computations
+server <- function(input, output) 
+  {
+    # give pure number
+    output$greeting <- renderText({
+        paste0("For every random island, you have a ", 
+               round(villagers$prob[villagers$name == input$name], digits = 4), "% chance of finding ",
+               input$name," on that island.") 
+        } )
+     
+    # the bar plot
+    output$bars <- renderPlot(
+      {
+        
+        # repeatable pls
+        rbinom1 <- repeatable(rbinom, seed = input$number)
+        
+        
+        # most of this is for ggplot2; note the input$x syntax4
+        flips <- tibble(flips = rbinom1(n = input$n, 
+                                       size = 1, 
+                                       prob = 1-villagers$prob[villagers$name==input$name])) %>% 
+            mutate(flips = if_else(flips == 1, 
+                                   paste0("Islands without ", input$name),
+                                   paste0("Islands with ", input$name)))
+        
+        flips %>% 
+            count(flips) %>% 
+            ggplot(aes(flips, n, fill = flips)) +
+            geom_col() +
+            scale_fill_manual(values = c("#78c2ad", "#f3969a")) +
+            geom_label(aes(flips, n, label = n), size = 5) +
+            theme(legend.position = "none",
+                  axis.text = element_text(size = 15)) +
+            labs(x = "", y = "") +
+            ggtitle(paste0("If you visit ", input$n, " islands and are looking for ", input$name, "...")) +
+            theme(plot.title = element_text(hjust = 0.5)) +
+            theme(plot.title = element_text(size=22))
+      }
+    
+)
+}
+# run it all
+shinyApp(ui = ui, server = server, options = list(height = 530))
+```
+
+<div class="card text-white bg-secondary mb-3" style="max-width: 90rem;">
+  <div class="card-header">Good luck!</div>
+  <div class="card-body">
+Animal Crossing: New Horizons is a game for the Nintendo Switch. In Animal Crossing: New Horizons, you live on and build up a deserted island with a small cast of nonplayable characters ("villagers"). Every once in a while, the player has the opportunity to search for or "hunt" new villagers by going to mystery islands. Players usually go on villager hunts with a very specific villager in mind. Sometimes villager hunts for specific villagers can take a few mystery islands, sometimes thousands. 
+
+This shiny app calculates the odds of finding your favorite villager on any mystery island and simulates how long it will take until you come across your dreamie, based on a random seed of your choosing. This is my first shiny app and was created by following Heads or Tail's shiny tutorial <a href = "https://heads0rtai1s.github.io/2019/12/05/shiny-starter-code/" target="_blank">(link here)</a>.
+  </div>
+</div>
+
+```{r include=FALSE}
+#deployApp(appName="dreamie_sim", account="jrcalabrese")
+```
